@@ -194,7 +194,7 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         style={{ width: '100%', height: '100%', display: 'block', cursor: isDragging ? 'grabbing' : 'grab' }}
         onMouseDown={handleMouseDown}
       >

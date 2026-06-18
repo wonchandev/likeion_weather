@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const NAV_ITEMS = [
-  { id: 'map',      label: 'Live Map',   icon: '🗺️',  path: '/' },
-  { id: 'insights', label: 'Insights',   icon: '📊',  path: '/insights' },
-  { id: 'journal',  label: 'My Journal', icon: '📓',  path: '/journal' },
+  { id: 'entry',    label: '기분 기록하기 📝', icon: '📝',  path: '/' },
+  { id: 'map',      label: '실시간 전국 지도 🗺️', icon: '🗺️',  path: '/map' },
+  { id: 'compare',  label: '실제 날씨 비교 📊', icon: '📊',  path: '/compare' },
+  { id: 'history',  label: '7일 감정 히스토리 📈', icon: '📈',  path: '/history' },
+  { id: 'journal',  label: '나의 감정 일기장 📓', icon: '📓',  path: '/journal' },
 ]
+
 
 const BOTTOM_ITEMS = [
   { id: 'settings', label: 'Settings', icon: '⚙️' },

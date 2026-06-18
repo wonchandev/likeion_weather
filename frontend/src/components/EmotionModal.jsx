@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import EmotionCard from './EmotionCard'
 import { EMOTIONS } from '../data/mockData'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 const EMOTION_LIST = Object.values(EMOTIONS)
 
 function getToday() {
@@ -77,7 +79,7 @@ export default function EmotionModal({ isOpen, onClose, onSubmit }) {
 
     // API 호출 (실패해도 계속 진행)
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/emotions/`, {
+      await fetch(`${API_URL}/api/emotions/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -92,6 +94,26 @@ export default function EmotionModal({ isOpen, onClose, onSubmit }) {
     }
 
     sessionStorage.setItem('mwm_entry', JSON.stringify(entry))
+    
+    // Save to local journal history
+    try {
+      const existingJournalRaw = localStorage.getItem('mwm_journal')
+      let journal = []
+      if (existingJournalRaw) {
+        journal = JSON.parse(existingJournalRaw)
+        if (!Array.isArray(journal)) journal = []
+      }
+      const todayIdx = journal.findIndex(item => item.date === entry.date)
+      if (todayIdx > -1) {
+        journal[todayIdx] = { ...entry, timestamp: Date.now() }
+      } else {
+        journal.unshift({ ...entry, timestamp: Date.now() })
+      }
+      localStorage.setItem('mwm_journal', JSON.stringify(journal))
+    } catch (e) {
+      console.error('Failed to save to journal history:', e)
+    }
+
     onSubmit(entry)
     onClose()
   }
