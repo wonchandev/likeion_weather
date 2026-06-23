@@ -1427,7 +1427,214 @@ input {
   font-size: 14px;
 }
 
+/* ── Weather Detail Modal ─────────────────────────── */
+.wdm-overlay {
+  align-items: center;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+
+
+.weather-detail-modal {
+  background: white;
+  border-radius: 24px;
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  margin: auto;
+  box-shadow: 0 24px 60px rgba(217, 112, 14, 0.18);
+  animation: slideUp 0.22s ease;
+  border: 1px solid #EDD9C4;
+  display: flex;
+  flex-direction: column;
+}
+
+.wdm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 28px 28px 0;
+}
+
+.wdm-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1A0E00;
+  letter-spacing: -0.5px;
+}
+
+.wdm-subtitle {
+  font-size: 13px;
+  color: #9A7040;
+  margin-top: 4px;
+}
+
+.wdm-section {
+  padding: 24px 28px;
+  border-top: 1.5px solid #FFF3E8;
+}
+
+.wdm-section:first-of-type {
+  border-top: none;
+  padding-top: 20px;
+}
+
+.wdm-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6B4A1C;
+  border-left: 3px solid #D9700E;
+  padding-left: 8px;
+  margin-bottom: 16px;
+}
+
+.wdm-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #9A7040;
+  padding: 20px 0;
+}
+
+/* 시간대별 가로 스크롤 */
+.hourly-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: auto;
+  scrollbar-color: #D9700E #FFF3E8;
+  cursor: grab;
+}
+
+.hourly-scroll:active {
+  cursor: grabbing;
+}
+
+.hourly-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.hourly-scroll::-webkit-scrollbar-track {
+  background: #FFF3E8;
+  border-radius: 4px;
+}
+
+.hourly-scroll::-webkit-scrollbar-thumb {
+  background: #D9700E;
+  border-radius: 4px;
+}
+
+.hourly-scroll::-webkit-scrollbar-thumb:hover {
+  background: #B85A0A;
+}
+
+.hourly-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 12px;
+  border-radius: 16px;
+  background: #FFFAF5;
+  border: 1.5px solid #EDD9C4;
+  min-width: 68px;
+  flex-shrink: 0;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.hourly-slot:hover {
+  transform: translateY(-2px);
+  border-color: #D9700E;
+}
+
+.hourly-slot-now {
+  background: #FFF3E8;
+  border-color: #D9700E;
+}
+
+.hourly-slot-now .hourly-time {
+  color: #D9700E;
+  font-weight: 800;
+}
+
+.hourly-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9A7040;
+}
+
+.hourly-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.hourly-temp {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1A0E00;
+}
+
+.hourly-pop {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 감정 비교 섹션 */
+.wdm-compare-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 20px;
+  background: #FFFAF5;
+  border-radius: 16px;
+  border: 1.5px solid #EDD9C4;
+}
+
+.wdm-compare-half {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.wdm-big-icon {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.wdm-temp {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1A0E00;
+}
+
+.wdm-mood-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wdm-compare-divider {
+  width: 1.5px;
+  height: 80px;
+  background: #EDD9C4;
+  flex-shrink: 0;
+}
+
 /* ── History Page ─────────────────────────────────── */
+.history-update-notice {
+  text-align: center;
+  font-size: 12px;
+  color: #B0A090;
+  margin-top: 32px;
+  padding-bottom: 8px;
+}
+
+
 .history-dashboard-container {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,12 @@
 import { Sun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
 
+export const COMPARE_COMMENTS = {
+  sunny:  { sunny: '☀️ 날씨도 기분도 맑은 하루네요!',      cloudy: '🤔 실제론 맑은데 기분은 흐리군요',       rainy: '😢 맑은 날씨인데 마음은 비가 오나요',    storm: '⛈️ 날씨와 달리 마음속엔 폭풍이 치네요' },
+  cloudy: { sunny: '😊 흐린 날씨지만 기분만은 맑아요!',    cloudy: '☁️ 날씨도 기분도 조금 흐린 하루',        rainy: '🌧️ 흐린 날씨에 마음도 젖어드는 하루',    storm: '⛈️ 흐린 하늘처럼 마음도 무거운 하루' },
+  rainy:  { sunny: '🌈 비 오는 날씨에도 기분은 화창해요!', cloudy: '☁️ 빗속에서도 차분하게 하루를 보내는 중', rainy: '🌧️ 날씨도 기분도 촉촉한 하루네요',        storm: '⛈️ 비까지 맞으며 힘든 하루를 보내고 있군요' },
+  storm:  { sunny: '💪 폭풍 속에서도 굳건한 기분이네요!',  cloudy: '☁️ 거친 날씨에도 의연하게 버티는 중',    rainy: '🌧️ 폭풍우 같은 하루, 마음도 젖어드네요', storm: '⛈️ 날씨도 마음도 폭풍 그 자체인 하루' },
+}
+
 export const EMOTIONS = {
   sunny: { id: 'sunny', label: '맑음', icon: '☀️', Icon: Sun,            iconColor: '#F59E0B', color: '#FEF3C7', border: '#F59E0B', text: '#92400E' },
   cloudy: { id: 'cloudy', label: '흐림', icon: '⛅', Icon: Cloud,         iconColor: '#94A3B8', color: '#F1F5F9', border: '#94A3B8', text: '#475569' },

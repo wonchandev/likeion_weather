@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { geoMercator, geoPath } from 'd3-geo'
 import { X } from 'lucide-react'
-import { EMOTIONS } from '../data/mockData'
+import { EMOTIONS, COMPARE_COMMENTS } from '../data/mockData'
 
 const W = 800
 const H = 900
@@ -77,13 +77,6 @@ function iconToWeather(icon) {
   if (icon.startsWith('09') || icon.startsWith('10')) return 'rainy'
   if (icon.startsWith('11')) return 'storm'
   return 'cloudy'
-}
-
-const COMPARE_COMMENTS = {
-  sunny:  { sunny: '☀️ 날씨도 기분도 맑은 하루네요!',      cloudy: '🤔 실제론 맑은데 기분은 흐리군요',       rainy: '😢 맑은 날씨인데 마음은 비가 오나요',    storm: '⛈️ 날씨와 달리 마음속엔 폭풍이 치네요' },
-  cloudy: { sunny: '😊 흐린 날씨지만 기분만은 맑아요!',    cloudy: '☁️ 날씨도 기분도 조금 흐린 하루',        rainy: '🌧️ 흐린 날씨에 마음도 젖어드는 하루',    storm: '⛈️ 흐린 하늘처럼 마음도 무거운 하루' },
-  rainy:  { sunny: '🌈 비 오는 날씨에도 기분은 화창해요!', cloudy: '☁️ 빗속에서도 차분하게 하루를 보내는 중', rainy: '🌧️ 날씨도 기분도 촉촉한 하루네요',        storm: '⛈️ 비까지 맞으며 힘든 하루를 보내고 있군요' },
-  storm:  { sunny: '💪 폭풍 속에서도 굳건한 기분이네요!',  cloudy: '☁️ 거친 날씨에도 의연하게 버티는 중',    rainy: '🌧️ 폭풍우 같은 하루, 마음도 젖어드네요', storm: '⛈️ 날씨도 마음도 폭풍 그 자체인 하루' },
 }
 
 // 지역별 mock 데이터
@@ -360,11 +353,22 @@ function WeatherCompareCard({ weather, weatherLoading, distribution }) {
 }
 
 // 지역 상세 우측 패널
-function RegionPanel({ regionName, onClose, weather, weatherLoading }) {
+function RegionPanel({ regionName, onClose, weather, weatherLoading, userEntry }) {
   const data = REGION_DATA[regionName]
   if (!data) return null
 
-  const { total, distribution, comments } = data
+  // 사용자 입력을 distribution·total에 반영
+  const distribution = userEntry
+    ? { ...data.distribution, [userEntry.emotion]: (data.distribution[userEntry.emotion] || 0) + 1 }
+    : data.distribution
+  const total = userEntry ? data.total + 1 : data.total
+
+  const allComments = [
+    ...(userEntry ? [{ emotion: userEntry.emotion, text: userEntry.comment || '', isUser: true,
+        minutesAgo: Math.floor((Date.now() - (userEntry.timestamp || Date.now())) / 60000) }] : []),
+    ...data.comments.filter(c => c.text),
+  ]
+
   const dominant = Object.entries(distribution).sort(([, a], [, b]) => b - a)[0][0]
   const dominantEmo = EMOTIONS[dominant]
 
@@ -412,13 +416,13 @@ function RegionPanel({ regionName, onClose, weather, weatherLoading }) {
 
       {/* 섹션 2: 최근 코멘트 */}
       <h3 style={sectionTitle}>최근 코멘트</h3>
-      {comments.filter(c => c.text).map((c, idx) => {
+      {allComments.map((c, idx) => {
         const emo = EMOTIONS[c.emotion]
         const pin = PIN_COLORS[c.emotion]
         return (
           <div key={idx} style={{
-            background: '#FFFFFF',
-            border: '1px solid #F0EAE2',
+            background: c.isUser ? emo.color : '#FFFFFF',
+            border: `1px solid ${c.isUser ? emo.border : '#F0EAE2'}`,
             borderRadius: '12px',
             padding: '12px 14px',
             marginBottom: '8px',
@@ -433,9 +437,15 @@ function RegionPanel({ regionName, onClose, weather, weatherLoading }) {
                 <emo.Icon size={11} color={pin.icon} strokeWidth={1.5} />
               </div>
               <span style={{ fontSize: '12px', color: pin.icon, fontWeight: 500 }}>{emo.label}</span>
-              <span style={{ fontSize: '11px', color: '#B0A89A', marginLeft: 'auto' }}>{c.minutesAgo}분 전</span>
+              {c.isUser
+                ? <span style={{ fontSize: '11px', color: emo.text, marginLeft: 'auto', fontWeight: 600 }}>✨ 내 기록</span>
+                : <span style={{ fontSize: '11px', color: '#B0A89A', marginLeft: 'auto' }}>{c.minutesAgo}분 전</span>
+              }
             </div>
-            <p style={{ fontSize: '13px', color: '#3A3530', lineHeight: 1.5 }}>{c.text}</p>
+            {c.text
+              ? <p style={{ fontSize: '13px', color: '#3A3530', lineHeight: 1.5 }}>{c.text}</p>
+              : <p style={{ fontSize: '13px', color: '#9A7040', fontStyle: 'italic', lineHeight: 1.5 }}>코멘트 없이 감정만 남겼어요.</p>
+            }
           </div>
         )
       })}
@@ -717,6 +727,14 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
           onClose={() => setSelectedRegion(null)}
           weather={weather}
           weatherLoading={weatherLoading}
+          userEntry={(() => {
+            try {
+              const raw = sessionStorage.getItem('mwm_entry')
+              if (!raw) return null
+              const e = JSON.parse(raw)
+              return e.region === selectedRegion ? e : null
+            } catch { return null }
+          })()}
         />
       )}
     </>

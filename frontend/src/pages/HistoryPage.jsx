@@ -2,7 +2,43 @@ import { useState, useEffect } from 'react'
 import SideMenu from '../components/SideMenu'
 import { EMOTIONS } from '../data/mockData'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// 오전 7시 이후부터 오늘 데이터를 히스토리에 포함
+const DAY_START_HOUR = 7
+
+function getDisplayToday() {
+  const now = new Date()
+  if (now.getHours() < DAY_START_HOUR) {
+    now.setDate(now.getDate() - 1)
+  }
+  return now
+}
+
+// 날짜별 mock 기본 카운트 (전국 집계 시뮬레이션, 7일치 고정값)
+const MOCK_BASE = [
+  { sunny: 8,  cloudy: 12, rainy: 4, storm: 2 },
+  { sunny: 5,  cloudy: 9,  rainy: 7, storm: 3 },
+  { sunny: 11, cloudy: 7,  rainy: 3, storm: 1 },
+  { sunny: 6,  cloudy: 14, rainy: 5, storm: 4 },
+  { sunny: 9,  cloudy: 8,  rainy: 6, storm: 2 },
+  { sunny: 4,  cloudy: 11, rainy: 8, storm: 5 },
+  { sunny: 10, cloudy: 6,  rainy: 4, storm: 2 },
+]
+
+function build7DayHistory() {
+  let journal = []
+  try { journal = JSON.parse(localStorage.getItem('mwm_journal') || '[]') } catch {}
+  const today = getDisplayToday()
+  return MOCK_BASE.map((base, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() - (6 - i))
+    const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    const counts = { ...base }
+    // 내 기록이 있으면 해당 날짜 감정 +1
+    const entry = journal.find(e => e.date === date)
+    if (entry?.emotion) counts[entry.emotion] = (counts[entry.emotion] || 0) + 1
+    return { date, ...counts }
+  })
+}
 
 function EmotionLineChart({ data }) {
   if (!data || data.length === 0) return null
@@ -170,20 +206,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadHistory() {
-      try {
-        const res = await fetch(`${API_URL}/api/emotions/history/`)
-        if (res.ok) {
-          const json = await res.json()
-          setData(json)
-        }
-      } catch (e) {
-        console.error('Failed to load history data:', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadHistory()
+    setData(build7DayHistory())
+    setLoading(false)
   }, [])
 
   return (
@@ -264,6 +288,10 @@ export default function HistoryPage() {
             </div>
           </div>
         )}
+
+        <p className="history-update-notice">
+          📅 히스토리는 매일 오전 {DAY_START_HOUR}시에 업데이트됩니다 · 오전 {DAY_START_HOUR}시 이전 기록은 다음 날 반영
+        </p>
       </main>
     </div>
   )
