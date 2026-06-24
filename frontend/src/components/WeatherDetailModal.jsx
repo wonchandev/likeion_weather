@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { EMOTIONS, COMPARE_COMMENTS } from '../data/mockData'
+import EmotionMarker from './EmotionMarker'
 
 const WEATHER_COORDS = {
   '서울': { lat: 37.5665, lon: 126.9780 }, '부산': { lat: 35.1796, lon: 129.0756 },
@@ -162,7 +163,7 @@ export default function WeatherDetailModal({ item, onClose }) {
 
             <div className="wdm-compare-half">
               <span className="compare-label">감정 날씨</span>
-              <span className="wdm-big-icon">{emoEmo.icon}</span>
+              <EmotionMarker type={item.emotion_weather} size={56} />
               <span className="wdm-mood-label" style={{ color: emoEmo.text }}>사람들의 평균</span>
               <span
                 className="compare-desc"

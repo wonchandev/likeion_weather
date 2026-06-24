@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, PenLine, Map, TrendingUp, BarChart2, BookOpen, Settings, HelpCircle } from 'lucide-react'
+import { Menu, X, Map, TrendingUp, BarChart2, BookOpen, Settings, HelpCircle } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { id: 'entry',   label: '기분 기록하기',     Icon: PenLine,    path: '/' },
   { id: 'map',     label: '실시간 전국 지도',   Icon: Map,        path: '/map' },
   { id: 'compare', label: '실제 날씨 비교',     Icon: TrendingUp, path: '/compare' },
   { id: 'history', label: '7일 감정 히스토리',  Icon: BarChart2,  path: '/history' },

@@ -6,7 +6,7 @@ import { EMOTIONS, COMPARE_COMMENTS } from '../data/mockData'
 const W = 800
 const H = 900
 const ZOOM_THRESHOLD = 2.5
-const MIN_SCALE = 1
+const MIN_SCALE = 1.5
 const MAX_SCALE = 8
 
 const GEO_URLS = [
@@ -308,6 +308,7 @@ function WeatherCompareCard({ weather, weatherLoading, distribution }) {
   }
 
   const realType = iconToWeather(weather.icon)
+  const realEmo = EMOTIONS[realType] || EMOTIONS.sunny
   const comment = dominant ? COMPARE_COMMENTS[realType]?.[dominant] : null
 
   return (
@@ -317,8 +318,8 @@ function WeatherCompareCard({ weather, weatherLoading, distribution }) {
         {/* 실제 날씨 */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
           <p style={{ fontSize: '11px', color: '#78716C', marginBottom: '4px' }}>실제 날씨</p>
-          <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} width="48" height="48" alt={weather.description} />
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#1A0E00' }}>{weather.description}</p>
+          <span style={{ fontSize: 44, lineHeight: 1 }}>{realEmo.icon}</span>
+          <p style={{ fontSize: '14px', fontWeight: 500, color: '#1A0E00' }}>{realEmo.label}</p>
           <p style={{ fontSize: '20px', fontWeight: 700, color: '#1A0E00' }}>{weather.temp}°C</p>
           <div style={{ display: 'flex', gap: '6px', fontSize: '11px', color: '#78716C' }}>
             <span>💧 {weather.humidity}%</span>
@@ -496,7 +497,7 @@ function MarkPopup({ popup, onClose }) {
 
 export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) {
   const [geoData, setGeoData] = useState(null)
-  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
+  const [transform, setTransform] = useState({ x: -200, y: -225, scale: 1.5 })
   const [animated, setAnimated] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [popup, setPopup] = useState(null)
@@ -531,6 +532,15 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
     return pt.matrixTransform(ctm.inverse())
   }, [])
 
+  const clampPos = useCallback((x, y, s) => {
+    const minX = -(W * (s - 1))
+    const minY = -(H * (s - 1))
+    return {
+      x: Math.min(0, Math.max(minX, x)),
+      y: Math.min(0, Math.max(minY, y)),
+    }
+  }, [])
+
   const handleWheel = useCallback((e) => {
     e.preventDefault()
     setAnimated(false)
@@ -539,10 +549,14 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
     setTransform(prev => {
       const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
       const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * factor))
+      if (newScale === prev.scale) return prev
       const ratio = newScale / prev.scale
-      return { x: mx - (mx - prev.x) * ratio, y: my - (my - prev.y) * ratio, scale: newScale }
+      const rawX = mx - (mx - prev.x) * ratio
+      const rawY = my - (my - prev.y) * ratio
+      const { x, y } = clampPos(rawX, rawY, newScale)
+      return { x, y, scale: newScale }
     })
-  }, [toSVGPt])
+  }, [toSVGPt, clampPos])
 
   useEffect(() => {
     const svg = svgRef.current
@@ -559,7 +573,10 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
       const dy = p.y - lastPos.current.y
       if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) dragMoved.current = true
       lastPos.current = { x: p.x, y: p.y }
-      setTransform(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }))
+      setTransform(prev => {
+        const { x, y } = clampPos(prev.x + dx, prev.y + dy, prev.scale)
+        return { ...prev, x, y }
+      })
     }
     const onUp = () => { lastPos.current = null; setIsDragging(false); dragMoved.current = false }
     window.addEventListener('mousemove', onMove)
@@ -681,36 +698,47 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
               const isSelected = mark.label === selectedRegion
               return (
                 <g key={mark.id} transform={`translate(${projX},${projY}) scale(${1 / transform.scale})`}>
-                  <foreignObject x={-60} y={-18} width={140} height={38} style={{ overflow: 'visible', pointerEvents: 'all' }}>
+                  {/* 시각적 pill */}
+                  <foreignObject x={-60} y={-18} width={140} height={36} style={{ overflow: 'visible', pointerEvents: 'none' }}>
                     <div
                       xmlns="http://www.w3.org/1999/xhtml"
                       style={{
+                        width: '100%', height: '100%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: '6px',
                         background: isSelected ? SELECTED_PILL[mark.emotion].background : '#FFFFFF',
                         border: isSelected ? SELECTED_PILL[mark.emotion].border : '1px solid #EEE8E0',
                         borderRadius: '20px', padding: '5px 10px 5px 6px',
                         boxShadow: isSelected ? '0 2px 10px rgba(0,0,0,0.12)' : '0 2px 6px rgba(0,0,0,0.08)',
-                        whiteSpace: 'nowrap', cursor: 'pointer',
-                        userSelect: 'none', transition: 'all 0.2s ease',
-                      }}
-                      onMouseDown={e => {
-                        e.stopPropagation()
-                        mouseDownPos.current = { x: e.clientX, y: e.clientY }
-                      }}
-                      onClick={e => {
-                        const dx = e.clientX - mouseDownPos.current.x
-                        const dy = e.clientY - mouseDownPos.current.y
-                        if (Math.sqrt(dx * dx + dy * dy) > 5) return
-                        e.stopPropagation()
-                        handleProvinceClick(mark)
-                      }}
-                    >
-                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: emo.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <emo.Icon size={13} color={emo.iconColor} strokeWidth={1.5} />
+                        whiteSpace: 'nowrap', transition: 'all 0.2s ease',
+                      }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: emo.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <emo.Icon size={13} color={emo.iconColor} strokeWidth={1.5} />
+                        </div>
+                        <span style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A' }}>{mark.label}</span>
                       </div>
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A' }}>{mark.label}</span>
                     </div>
                   </foreignObject>
+                  {/* SVG rect 클릭 영역 — 변환과 무관하게 정확한 좌표 보장 */}
+                  <rect
+                    x={-30} y={-16} width={80} height={32}
+                    fill="transparent"
+                    style={{ cursor: 'pointer' }}
+                    onMouseDown={e => {
+                      e.stopPropagation()
+                      mouseDownPos.current = { x: e.clientX, y: e.clientY }
+                    }}
+                    onClick={e => {
+                      const dx = e.clientX - mouseDownPos.current.x
+                      const dy = e.clientY - mouseDownPos.current.y
+                      if (Math.sqrt(dx * dx + dy * dy) > 5) return
+                      e.stopPropagation()
+                      handleProvinceClick(mark)
+                    }}
+                  />
                 </g>
               )
             })}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, X } from 'lucide-react'
 import KoreaMap from '../components/KoreaMap'
 import SideMenu from '../components/SideMenu'
+import EmotionEntryModal from '../components/EmotionEntryModal'
 import { EMOTIONS, PROVINCE_MARKS, INDIVIDUAL_MARKS } from '../data/mockData'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -208,6 +209,16 @@ export default function MapPage() {
   const [individualMarks, setIndividualMarks] = useState(INDIVIDUAL_MARKS)
   const [userMarks, setUserMarks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showEntryModal, setShowEntryModal] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('mwm_entry')
+      if (!raw) return true
+      const saved = JSON.parse(raw)
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+      return saved.date !== todayStr
+    } catch { return true }
+  })
 
   // Region panel states
   const [regionStats, setRegionStats] = useState(null)
@@ -323,10 +334,27 @@ export default function MapPage() {
       />
       <SideMenu />
       
-      {/* FAB button routes back to Entry page to log mood */}
-      <button className="fab" onClick={() => navigate('/')} aria-label="기분 남기기">
+      <button className="fab" onClick={() => setShowEntryModal(true)} aria-label="기분 남기기">
         <Plus size={24} />
       </button>
+
+      {showEntryModal && (
+        <EmotionEntryModal
+          onClose={() => setShowEntryModal(false)}
+          onSubmitted={(entry) => {
+            if (entry.latitude && entry.longitude) {
+              setUserMarks([{
+                id: 'user-today',
+                coordinates: [entry.longitude, entry.latitude],
+                emotion: entry.emotion,
+                comment: entry.comment || '',
+                timestamp: entry.timestamp || Date.now(),
+                region: entry.region || '내 위치',
+              }])
+            }
+          }}
+        />
+      )}
 
       {/* Slide-over Drawer for Region Detail View */}
       <aside className={`region-drawer ${region ? 'open' : ''}`}>

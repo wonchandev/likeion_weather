@@ -1,5 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import EntryPage from './pages/EntryPage'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import MapPage from './pages/MapPage'
 import ComparePage from './pages/ComparePage'
 import HistoryPage from './pages/HistoryPage'
@@ -14,7 +13,7 @@ function App() {
       }}
     >
       <Routes>
-        <Route path="/"         element={<EntryPage />} />
+        <Route path="/"         element={<Navigate to="/map" replace />} />
         <Route path="/map"      element={<MapPage />} />
         <Route path="/map/:region" element={<MapPage />} />
         <Route path="/compare"  element={<ComparePage />} />

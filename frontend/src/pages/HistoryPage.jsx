@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import SideMenu from '../components/SideMenu'
+import EmotionMarker from '../components/EmotionMarker'
 import { EMOTIONS } from '../data/mockData'
 
 // 오전 7시 이후부터 오늘 데이터를 히스토리에 포함
@@ -243,7 +244,8 @@ export default function HistoryPage() {
                     return (
                       <div key={key} className="chart-legend-item">
                         <span className="legend-line-dot" style={{ backgroundColor: emo.border }} />
-                        <span>{emo.icon} {emo.label}</span>
+                        <EmotionMarker type={key} size={18} />
+                        <span>{emo.label}</span>
                       </div>
                     )
                   })}
@@ -261,10 +263,14 @@ export default function HistoryPage() {
                   <thead>
                     <tr>
                       <th>날짜</th>
-                      <th>☀️ 맑음</th>
-                      <th>⛅ 흐림</th>
-                      <th>🌧️ 비</th>
-                      <th>⛈️ 폭풍</th>
+                      {Object.keys(EMOTIONS).map(key => (
+                        <th key={key}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            <EmotionMarker type={key} size={18} />
+                            {EMOTIONS[key].label}
+                          </div>
+                        </th>
+                      ))}
                       <th>합계</th>
                     </tr>
                   </thead>

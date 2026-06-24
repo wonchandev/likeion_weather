@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import SideMenu from '../components/SideMenu'
 import WeatherDetailModal from '../components/WeatherDetailModal'
+import EmotionMarker from '../components/EmotionMarker'
 import { EMOTIONS, COMPARE_COMMENTS, PROVINCE_MARKS } from '../data/mockData'
 
 const WEATHER_COORDS = {
@@ -124,6 +125,8 @@ export default function ComparePage() {
       )}
 
       <main className="page-content">
+
+
         <header className="page-header compare-header-row">
           <div>
             <h1 className="page-title">실제 날씨 vs 감정 날씨</h1>
@@ -182,7 +185,7 @@ export default function ComparePage() {
 
                         <div className="compare-half emotion-half">
                           <span className="compare-label">감정 날씨</span>
-                          <span className="compare-emoji">{emoEmo.icon}</span>
+                          <EmotionMarker type={item.emotion_weather} size={44} />
                           <span className="compare-desc" style={{ color: emoEmo.text }}>{emoEmo.label}</span>
                         </div>
                       </div>

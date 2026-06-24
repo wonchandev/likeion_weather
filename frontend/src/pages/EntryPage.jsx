@@ -11,6 +11,16 @@ function getToday() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function findNearestRegion(lat, lng) {
+  let minDist = Infinity, nearest = '서울'
+  for (const mark of PROVINCE_MARKS) {
+    const [mLon, mLat] = mark.coordinates
+    const dist = (lat - mLat) ** 2 + (lng - mLon) ** 2
+    if (dist < minDist) { minDist = dist; nearest = mark.label }
+  }
+  return nearest
+}
+
 function getSessionId() {
   let sessionId = localStorage.getItem('mwm_session_id')
   if (!sessionId) {
@@ -142,18 +152,12 @@ export default function EntryPage() {
         
         sessionStorage.setItem('mwm_entry', JSON.stringify(entry))
         
-        // Save to journal history
+        // Save to journal history (모든 기록 누적)
         try {
           const existing = localStorage.getItem('mwm_journal')
           let journal = existing ? JSON.parse(existing) : []
           if (!Array.isArray(journal)) journal = []
-          
-          const idx = journal.findIndex(item => item.date === entry.date)
-          if (idx > -1) {
-            journal[idx] = entry
-          } else {
-            journal.unshift(entry)
-          }
+          journal.unshift(entry)
           localStorage.setItem('mwm_journal', JSON.stringify(journal))
         } catch {}
 
@@ -161,17 +165,26 @@ export default function EntryPage() {
       }
     } catch (err) {
       console.error('Failed to save emotion entry:', err)
-      // Save locally as fallback if server is down
       const fallbackEntry = {
         date: getToday(),
         emotion: selected,
         comment,
         latitude: finalLat,
         longitude: finalLng,
-        region: region,
+        region: finalLat && finalLng ? findNearestRegion(finalLat, finalLng) : region,
         timestamp: Date.now()
       }
       sessionStorage.setItem('mwm_entry', JSON.stringify(fallbackEntry))
+
+      // 서버 없을 때도 저널에 누적 저장
+      try {
+        const existing = localStorage.getItem('mwm_journal')
+        let journal = existing ? JSON.parse(existing) : []
+        if (!Array.isArray(journal)) journal = []
+        journal.unshift(fallbackEntry)
+        localStorage.setItem('mwm_journal', JSON.stringify(journal))
+      } catch {}
+
       navigate('/map')
     } finally {
       setSubmitting(false)
