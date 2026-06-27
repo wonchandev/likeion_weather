@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, LogIn, LogOut } from 'lucide-react'
 import KoreaMap from '../components/KoreaMap'
 import SideMenu from '../components/SideMenu'
 import EmotionEntryModal from '../components/EmotionEntryModal'
+import { useAuth } from '../context/AuthContext'
 import { EMOTIONS, PROVINCE_MARKS, INDIVIDUAL_MARKS } from '../data/mockData'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -204,7 +205,10 @@ function DonutChart({ stats }) {
 export default function MapPage() {
   const navigate = useNavigate()
   const { region } = useParams()
-  
+  const { isLoggedIn, logout } = useAuth()
+
+  const [loginNudge, setLoginNudge] = useState(false)
+
   const [provinceMasks, setProvinceMasks] = useState(PROVINCE_MARKS)
   const [individualMarks, setIndividualMarks] = useState(INDIVIDUAL_MARKS)
   const [userMarks, setUserMarks] = useState([])
@@ -333,7 +337,17 @@ export default function MapPage() {
         userMarks={userMarks}
       />
       <SideMenu />
-      
+
+      {isLoggedIn ? (
+        <button className="map-auth-btn" onClick={logout}>
+          <LogOut size={16} /> 로그아웃
+        </button>
+      ) : (
+        <button className="map-auth-btn" onClick={() => navigate('/login')}>
+          <LogIn size={16} /> 로그인
+        </button>
+      )}
+
       <button className="fab" onClick={() => setShowEntryModal(true)} aria-label="기분 남기기">
         <Plus size={24} />
       </button>
@@ -352,8 +366,21 @@ export default function MapPage() {
                 region: entry.region || '내 위치',
               }])
             }
+            if (!isLoggedIn) setLoginNudge(true)
           }}
         />
+      )}
+
+      {loginNudge && (
+        <div className="login-nudge">
+          <div className="login-nudge-content">
+            <span>🌤️ 기록 완료! 로그인하면 어느 기기에서든 내 기록을 확인할 수 있어요</span>
+            <div className="login-nudge-actions">
+              <button className="login-nudge-cta" onClick={() => navigate('/login')}>로그인</button>
+              <button className="login-nudge-close" onClick={() => setLoginNudge(false)}>✕</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Slide-over Drawer for Region Detail View */}

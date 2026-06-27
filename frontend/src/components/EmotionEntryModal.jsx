@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import EmotionCard from './EmotionCard'
+import { authFetch } from '../utils/api'
 import { EMOTIONS, PROVINCE_MARKS } from '../data/mockData'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -35,11 +36,36 @@ export default function EmotionEntryModal({ onClose, onSubmitted }) {
   const [selected, setSelected] = useState(null)
   const [comment, setComment] = useState('')
   const [region, setRegion] = useState('서울')
-  const [locState, setLocState] = useState('idle')
+  // 이전에 동의한 적 있으면 바로 위치 요청, 없으면 동의 안내 먼저
+  const [locState, setLocState] = useState(
+    () => localStorage.getItem('mwm_loc_consent') ? 'loading' : 'pending'
+  )
   const [coords, setCoords] = useState(null)
   const [todayDominant, setTodayDominant] = useState('sunny')
   const [submittedToday, setSubmittedToday] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) { setLocState('denied'); return }
+    setLocState('loading')
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        setCoords({ lat, lng })
+        setRegion(findNearestRegion(lat, lng))
+        setLocState('ok')
+      },
+      () => setLocState('denied')
+    )
+  }
+
+  const handleLocConsent = () => {
+    localStorage.setItem('mwm_loc_consent', '1')
+    requestLocation()
+  }
+
+  const handleLocSkip = () => setLocState('denied')
 
   useEffect(() => {
     // 전국 대표 기분 fetch
@@ -75,23 +101,11 @@ export default function EmotionEntryModal({ onClose, onSubmitted }) {
       } catch {}
     }
 
-    // 위치 수집
-    if (navigator.geolocation) {
-      setLocState('loading')
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const lat = pos.coords.latitude
-          const lng = pos.coords.longitude
-          setCoords({ lat, lng })
-          setRegion(findNearestRegion(lat, lng))
-          setLocState('ok')
-        },
-        () => setLocState('denied')
-      )
-    } else {
-      setLocState('denied')
+    // 이전에 동의한 적 있으면 바로 위치 요청
+    if (localStorage.getItem('mwm_loc_consent')) {
+      requestLocation()
     }
-  }, [])
+  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -116,12 +130,11 @@ export default function EmotionEntryModal({ onClose, onSubmitted }) {
 
     let entry
     try {
-      const res = await fetch(`${API_URL}/api/emotions/`, {
+      const res = await authFetch(`${API_URL}/api/emotions/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (res.ok) {
+      if (res?.ok) {
         const data = await res.json()
         entry = {
           date: getToday(), emotion: data.emotion, comment: data.comment,
@@ -175,6 +188,20 @@ export default function EmotionEntryModal({ onClose, onSubmitted }) {
           )}
 
           {/* 위치 상태 */}
+          {locState === 'pending' && (
+            <div className="loc-consent-box">
+              <p className="loc-consent-title">📍 위치정보 수집 안내</p>
+              <p className="loc-consent-desc">
+                감정을 지도에 정확히 표시하기 위해 현재 위치(위·경도)를 일회성으로 수집합니다.
+                수집된 위치는 감정 기록 저장 목적 외에 사용되지 않으며, 기록 삭제 시 함께 파기됩니다.
+              </p>
+              <a href="/privacy" target="_blank" className="loc-consent-link">개인정보처리방침 보기 →</a>
+              <div className="loc-consent-actions">
+                <button type="button" className="loc-consent-agree" onClick={handleLocConsent}>동의하고 위치 사용</button>
+                <button type="button" className="loc-consent-skip" onClick={handleLocSkip}>직접 선택할게요</button>
+              </div>
+            </div>
+          )}
           {locState === 'loading' && (
             <div className="loc-info"><span className="location-dot loading" /> 위치 파악 중...</div>
           )}

@@ -90,6 +90,18 @@ export default function WeatherDetailModal({ item, onClose }) {
     el.scrollLeft = Math.max(0, targetLeft)
   }, [hourly, currentHourIdx])
 
+  // 마우스 휠 → 가로 스크롤 (passive: false 필요)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const onWheel = (e) => {
+      e.preventDefault()
+      el.scrollLeft += e.deltaY
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [hourly])
+
   const realEmo    = EMOTIONS[item.real_weather]    || EMOTIONS.sunny
   const emoEmo     = EMOTIONS[item.emotion_weather] || EMOTIONS.sunny
   const commentText = COMPARE_COMMENTS[item.real_weather]?.[item.emotion_weather] ?? ''
