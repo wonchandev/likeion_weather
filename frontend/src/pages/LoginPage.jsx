@@ -9,7 +9,7 @@ export default function LoginPage() {
   const location = useLocation()
   const { login } = useAuth()
 
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState('')
@@ -19,8 +19,7 @@ export default function LoginPage() {
 
   const validate = () => {
     const errs = {}
-    if (!email) errs.email = '필수 항목이에요'
-    else if (!email.includes('@')) errs.email = '이메일 형식이 올바르지 않아요'
+    if (!username) errs.username = '필수 항목이에요'
     if (!password) errs.password = '필수 항목이에요'
     setFieldErrors(errs)
     return Object.keys(errs).length === 0
@@ -36,19 +35,18 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       })
       if (!res.ok) {
-        setError('이메일 또는 비밀번호가 틀렸어요')
+        setError('아이디 또는 비밀번호가 틀렸어요')
         return
       }
       const data = await res.json()
       login(data.access_token, data.user)
       navigate('/')
-    } catch (e) {
-      // 백엔드 미완성 — 개발 환경에서는 mock 로그인으로 UI 확인
+    } catch {
       if (import.meta.env.DEV) {
-        login('mock-token-dev', { email })
+        login('mock-token-dev', { username })
         navigate('/')
         return
       }
@@ -58,14 +56,9 @@ export default function LoginPage() {
     }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    handleLogin()
-  }
-
   return (
     <div className="auth-page">
-      <form className="auth-card" onSubmit={handleSubmit}>
+      <form className="auth-card" onSubmit={e => { e.preventDefault(); handleLogin() }}>
         <div className="auth-logo">
           <span className="auth-logo-icon">🌤️</span>
           <span className="auth-logo-text">감정 날씨 지도</span>
@@ -75,14 +68,15 @@ export default function LoginPage() {
 
         <div className="auth-field">
           <input
-            type="email"
-            className={`auth-input ${fieldErrors.email ? 'error' : ''}`}
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
+            type="text"
+            className={`auth-input ${fieldErrors.username ? 'error' : ''}`}
+            placeholder="아이디"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            autoComplete="username"
+            maxLength={20}
           />
-          {fieldErrors.email && <p className="auth-error">{fieldErrors.email}</p>}
+          {fieldErrors.username && <p className="auth-error">{fieldErrors.username}</p>}
         </div>
 
         <div className="auth-field">
@@ -91,7 +85,7 @@ export default function LoginPage() {
             className={`auth-input ${fieldErrors.password ? 'error' : ''}`}
             placeholder="비밀번호"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => setPassword(e.target.value)}
             autoComplete="current-password"
           />
           {fieldErrors.password && <p className="auth-error">{fieldErrors.password}</p>}

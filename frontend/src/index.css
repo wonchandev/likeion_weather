@@ -3200,6 +3200,48 @@ input {
   cursor: not-allowed;
 }
 
+.auth-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-input-row .auth-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-check-btn {
+  flex-shrink: 0;
+  background: #F5EFE7;
+  color: #6B4A1C;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.auth-check-btn:hover:not(:disabled) { background: #EDE3D6; }
+.auth-check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.auth-check-result {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.auth-check-result.available { color: #16a34a; }
+.auth-check-result.taken     { color: #EF4444; }
+.auth-check-result.checking  { color: #9A7040; }
+
+.auth-input.valid { border-color: #16a34a; }
+
+.auth-hint {
+  font-size: 11px;
+  color: #B0A89A;
+  margin-top: 4px;
+}
+
 .auth-agree-section {
   display: flex;
   flex-direction: column;
