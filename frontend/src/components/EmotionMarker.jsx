@@ -9,7 +9,6 @@ export default function EmotionMarker({ type, size = 36 }) {
       height: size,
       borderRadius: '50%',
       background: emo.color,
-      border: `1.5px solid ${emo.border}`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

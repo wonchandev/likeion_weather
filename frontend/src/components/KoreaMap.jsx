@@ -71,6 +71,22 @@ const WEATHER_COORDS = {
   '제주': { lat: 33.4996, lon: 126.5312 },
 }
 
+const GEO_NAME_MAP = {
+  '서울': '서울', '부산': '부산', '인천': '인천', '대구': '대구',
+  '광주': '광주', '대전': '대전', '울산': '울산', '세종': '세종',
+  '경기': '경기', '강원': '강원', '충청북': '충북', '충청남': '충남',
+  '전라북': '전북', '전북': '전북', '전라남': '전남',
+  '경상북': '경북', '경상남': '경남', '제주': '제주',
+}
+
+function geoToLabel(geoName) {
+  if (!geoName) return null
+  for (const [key, val] of Object.entries(GEO_NAME_MAP)) {
+    if (geoName.startsWith(key)) return val
+  }
+  return null
+}
+
 function iconToWeather(icon) {
   if (icon.startsWith('01')) return 'sunny'
   if (icon.startsWith('02') || icon.startsWith('03') || icon.startsWith('04')) return 'cloudy'
@@ -660,9 +676,23 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
             transform={`translate(${transform.x},${transform.y}) scale(${transform.scale})`}
             style={{ transition: animated ? 'transform 0.4s ease' : 'none' }}
           >
-            {geoData?.features?.map((feature, i) => (
-              <path key={i} d={pathGen(feature)} style={{ fill: 'var(--map-land)', stroke: 'var(--map-border)', pointerEvents: 'none' }} strokeWidth={0.5 / transform.scale} />
-            ))}
+            {geoData?.features?.map((feature, i) => {
+              const label = geoToLabel(feature.properties?.name)
+              const isSelected = label === selectedRegion
+              return (
+                <path
+                  key={i}
+                  d={pathGen(feature)}
+                  style={{
+                    fill: isSelected ? 'rgba(217, 112, 14, 0.22)' : 'var(--map-land)',
+                    stroke: isSelected ? '#D9700E' : 'var(--map-border)',
+                    pointerEvents: 'none',
+                    transition: 'fill 0.25s ease, stroke 0.25s ease',
+                  }}
+                  strokeWidth={isSelected ? 1.5 / transform.scale : 0.5 / transform.scale}
+                />
+              )
+            })}
 
             {/* 개인 마커 핀 (줌 인 시) */}
             {transform.scale >= ZOOM_THRESHOLD && individualAll.map(mark => {
