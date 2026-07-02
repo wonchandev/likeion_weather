@@ -161,21 +161,10 @@ def emotions_api(request):
                 "timestamp": int(e.created_at.timestamp() * 1000),
                 "region": e.region
             })
-            
-        # If today's individual marks are empty, return some recent mock ones so it doesn't look blank
-        if not individual_marks:
-            # Fall back to past 3 days to show data
-            recent_emotions = EmotionEntry.objects.all().order_by('-created_at')[:30]
-            for e in recent_emotions:
-                individual_marks.append({
-                    "id": e.id,
-                    "coordinates": [e.longitude, e.latitude] if e.longitude else [127.0, 37.0],
-                    "emotion": e.emotion_type,
-                    "comment": e.comment,
-                    "timestamp": int(e.created_at.timestamp() * 1000),
-                    "region": e.region
-                })
-        
+
+        # 오늘 기록이 없으면 개별 마커도 비운다(과거 데이터로 채우지 않음).
+        # 시/도 대표 마커·날씨 비교와 동일하게 '오늘 기록 없음'을 그대로 반영 → '?' 설계와 일관.
+
         # 2. Province representative marks (calculated dynamically from today's data)
         province_masks = []
         for p in PROVINCE_DEFAULTS:
