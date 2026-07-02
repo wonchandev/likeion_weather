@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { geoMercator, geoPath } from 'd3-geo'
 import { X, HelpCircle } from 'lucide-react'
-import { EMOTIONS, COMPARE_COMMENTS } from '../data/mockData'
-import { API_URL, entryKey } from '../utils/api'
+import { EMOTIONS } from '../data/mockData'
 
 const W = 800
 const H = 900
@@ -56,11 +55,6 @@ const SELECTED_PILL = {
   storm:  { border: '1.5px solid #C0A8E0', background: '#F0ECF8' },
 }
 
-const DONUT_COLORS = {
-  sunny: '#F0C080', cloudy: '#C0CAD4', rainy: '#A0B8E8', storm: '#C0A8E0',
-}
-
-
 const GEO_NAME_MAP = {
   '서울': '서울', '부산': '부산', '인천': '인천', '대구': '대구',
   '광주': '광주', '대전': '대전', '울산': '울산', '세종': '세종',
@@ -77,144 +71,6 @@ function geoToLabel(geoName) {
   return null
 }
 
-function iconToWeather(icon) {
-  if (icon.startsWith('01')) return 'sunny'
-  if (icon.startsWith('02') || icon.startsWith('03') || icon.startsWith('04')) return 'cloudy'
-  if (icon.startsWith('09') || icon.startsWith('10')) return 'rainy'
-  if (icon.startsWith('11')) return 'storm'
-  return 'cloudy'
-}
-
-// 지역별 mock 데이터
-const REGION_DATA = {
-  '서울': {
-    total: 24,
-    distribution: { sunny: 6, cloudy: 8, rainy: 6, storm: 4 },
-    comments: [
-      { emotion: 'cloudy', text: '오늘 날씨처럼 기분도 흐리다. 커피 한잔 마시니 조금 나아진 것 같아요.', minutesAgo: 3 },
-      { emotion: 'sunny', text: '따뜻한 봄날 점심 산책, 기분 최고!', minutesAgo: 11 },
-      { emotion: 'rainy', text: '갑자기 소나기, 우산 없어서 카페에서 피신 중', minutesAgo: 27 },
-    ],
-  },
-  '부산': {
-    total: 18,
-    distribution: { sunny: 8, cloudy: 5, rainy: 3, storm: 2 },
-    comments: [
-      { emotion: 'sunny', text: '해운대 바람이 너무 좋다', minutesAgo: 5 },
-      { emotion: 'cloudy', text: '흐린 날 바다 보니까 오히려 더 좋네', minutesAgo: 20 },
-    ],
-  },
-  '인천': {
-    total: 11,
-    distribution: { sunny: 3, cloudy: 4, rainy: 3, storm: 1 },
-    comments: [
-      { emotion: 'rainy', text: '인천 비 온다. 퇴근길 조심하세요', minutesAgo: 8 },
-      { emotion: 'cloudy', text: '공항 가는 길, 날씨도 마음도 흐리다', minutesAgo: 22 },
-    ],
-  },
-  '대구': {
-    total: 14,
-    distribution: { sunny: 4, cloudy: 6, rainy: 2, storm: 2 },
-    comments: [
-      { emotion: 'cloudy', text: '대구도 흐리네. 원래 맑은 곳인데', minutesAgo: 14 },
-    ],
-  },
-  '광주': {
-    total: 10,
-    distribution: { sunny: 5, cloudy: 2, rainy: 2, storm: 1 },
-    comments: [
-      { emotion: 'sunny', text: '광주 오늘 날씨 정말 좋다!', minutesAgo: 6 },
-    ],
-  },
-  '대전': {
-    total: 13,
-    distribution: { sunny: 3, cloudy: 4, rainy: 2, storm: 4 },
-    comments: [
-      { emotion: 'storm', text: '스트레스 최고치. 커피도 안 먹힘', minutesAgo: 10 },
-      { emotion: 'cloudy', text: '대전도 오늘 흐림', minutesAgo: 25 },
-    ],
-  },
-  '울산': {
-    total: 9,
-    distribution: { sunny: 3, cloudy: 3, rainy: 2, storm: 1 },
-    comments: [
-      { emotion: 'cloudy', text: '공업단지 지나다보니 흐린 날이 더 어울려', minutesAgo: 18 },
-    ],
-  },
-  '세종': {
-    total: 7,
-    distribution: { sunny: 4, cloudy: 2, rainy: 1, storm: 0 },
-    comments: [
-      { emotion: 'sunny', text: '세종 호수 산책 중, 날씨 맑음', minutesAgo: 20 },
-    ],
-  },
-  '경기': {
-    total: 31,
-    distribution: { sunny: 10, cloudy: 9, rainy: 7, storm: 5 },
-    comments: [
-      { emotion: 'sunny', text: '판교 쪽 날씨 맑아서 점심 나왔어요', minutesAgo: 7 },
-      { emotion: 'rainy', text: '수원 쪽 비 많이 와요. 우산 챙기세요!', minutesAgo: 15 },
-      { emotion: 'storm', text: '시험 기간... 폭풍 그 자체', minutesAgo: 30 },
-    ],
-  },
-  '강원': {
-    total: 15,
-    distribution: { sunny: 3, cloudy: 4, rainy: 2, storm: 6 },
-    comments: [
-      { emotion: 'storm', text: '시험기간 너무 힘들다', minutesAgo: 15 },
-      { emotion: 'cloudy', text: '산 안개가 너무 예뻐서 기분이 묘해', minutesAgo: 33 },
-    ],
-  },
-  '충북': {
-    total: 8,
-    distribution: { sunny: 2, cloudy: 3, rainy: 2, storm: 1 },
-    comments: [
-      { emotion: 'rainy', text: '청주 비가 내려요. 오히려 좋아', minutesAgo: 12 },
-    ],
-  },
-  '충남': {
-    total: 9,
-    distribution: { sunny: 5, cloudy: 2, rainy: 1, storm: 1 },
-    comments: [
-      { emotion: 'sunny', text: '오늘 하늘이 진짜 맑다', minutesAgo: 8 },
-    ],
-  },
-  '전북': {
-    total: 11,
-    distribution: { sunny: 4, cloudy: 4, rainy: 2, storm: 1 },
-    comments: [
-      { emotion: 'cloudy', text: '전주 한옥마을, 흐린 날도 분위기 있네', minutesAgo: 16 },
-    ],
-  },
-  '전남': {
-    total: 10,
-    distribution: { sunny: 3, cloudy: 3, rainy: 3, storm: 1 },
-    comments: [
-      { emotion: 'rainy', text: '목포 비 오는 날 홍어 한점...', minutesAgo: 22 },
-    ],
-  },
-  '경북': {
-    total: 12,
-    distribution: { sunny: 3, cloudy: 4, rainy: 2, storm: 3 },
-    comments: [
-      { emotion: 'storm', text: '경주 시험 준비 중. 폭풍 같은 하루', minutesAgo: 19 },
-    ],
-  },
-  '경남': {
-    total: 14,
-    distribution: { sunny: 5, cloudy: 4, rainy: 3, storm: 2 },
-    comments: [
-      { emotion: 'cloudy', text: '창원 흐린 하루. 기분도 비슷', minutesAgo: 11 },
-    ],
-  },
-  '제주': {
-    total: 12,
-    distribution: { sunny: 7, cloudy: 2, rainy: 2, storm: 1 },
-    comments: [
-      { emotion: 'rainy', text: '갑작스러운 소나기. 카페에서 쉬는 중', minutesAgo: 12 },
-    ],
-  },
-}
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000)
@@ -222,279 +78,6 @@ function timeAgo(ts) {
   if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
   if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
   return `${Math.floor(diff / 86400)}일 전`
-}
-
-// SVG 도넛 차트
-function DonutChart({ distribution }) {
-  const r = 40, cx = 55, cy = 55
-  const circ = 2 * Math.PI * r
-  const total = Object.values(distribution).reduce((a, b) => a + b, 0)
-  if (total === 0) return <div style={{ fontSize: 13, color: '#9A7040' }}>데이터 없음</div>
-
-  let acc = 0
-  const segments = Object.entries(distribution)
-    .filter(([, c]) => c > 0)
-    .map(([key, count]) => {
-      const pct = count / total
-      const seg = { key, count, pct, offset: acc }
-      acc += pct
-      return seg
-    })
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '4px' }}>
-      <svg width="110" height="110" viewBox="0 0 110 110" style={{ flexShrink: 0 }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0EAE2" strokeWidth="11" />
-        {segments.map(({ key, pct, offset }) => (
-          <circle
-            key={key}
-            cx={cx} cy={cy} r={r}
-            fill="none"
-            stroke={DONUT_COLORS[key]}
-            strokeWidth="11"
-            strokeDasharray={`${circ * pct} ${circ}`}
-            strokeDashoffset={`${-circ * offset}`}
-            transform={`rotate(-90 ${cx} ${cy})`}
-            strokeLinecap="round"
-          />
-        ))}
-        <text x={cx} y={cy - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="#1A0E00">{total}</text>
-        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fill="#9A7040" fontWeight="600">명</text>
-      </svg>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-        {Object.entries(distribution).map(([key, count]) => {
-          const emo = EMOTIONS[key]
-          const pct = total > 0 ? Math.round((count / total) * 100) : 0
-          return (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px' }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: DONUT_COLORS[key], flexShrink: 0 }} />
-              <span style={{ color: '#4A3010', fontWeight: 600, flex: 1 }}>{emo.label}</span>
-              <span style={{ color: '#9A7040' }}>{count}명 · {pct}%</span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// 실제 날씨 vs 감정 날씨 비교 카드
-function WeatherCompareCard({ weather, weatherLoading, distribution }) {
-  const dominant = distribution
-    ? Object.entries(distribution).sort(([, a], [, b]) => b - a)[0][0]
-    : null
-  const dominantCount = dominant ? distribution[dominant] : 0
-  const emo = dominant ? EMOTIONS[dominant] : null
-  const EmoIcon = emo ? emo.Icon : null
-
-  const cardBase = {
-    background: '#FFFFFF', border: '1px solid #F0EAE2',
-    borderRadius: '16px', padding: '16px', marginBottom: '16px',
-  }
-
-  if (weatherLoading) {
-    return <div style={{ height: 140, background: '#F5F0EB', borderRadius: '8px', marginBottom: '16px', animation: 'pulse 1.2s ease infinite' }} />
-  }
-
-  if (!weather) {
-    return (
-      <div style={{ ...cardBase, textAlign: 'center' }}>
-        <p style={{ fontSize: '13px', color: '#B0A89A', marginBottom: emo ? '12px' : 0 }}>날씨 정보를 불러올 수 없어요</p>
-        {emo && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: emo.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <EmoIcon size={28} color={emo.iconColor} strokeWidth={1.5} />
-            </div>
-            <p style={{ fontSize: '14px', fontWeight: 500, color: emo.text }}>{emo.label}</p>
-            <p style={{ fontSize: '11px', color: '#78716C' }}>{dominantCount}명 참여</p>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  const realType = iconToWeather(weather.icon)
-  const realEmo = EMOTIONS[realType] || EMOTIONS.sunny
-  const comment = dominant ? COMPARE_COMMENTS[realType]?.[dominant] : null
-
-  return (
-    <div style={cardBase}>
-      <p style={{ fontSize: '13px', fontWeight: 700, color: '#4A3010', marginBottom: '12px' }}>실제 날씨 vs 감정 날씨</p>
-      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-        {/* 실제 날씨 */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-          <p style={{ fontSize: '11px', color: '#78716C', marginBottom: '4px' }}>실제 날씨</p>
-          <span style={{ fontSize: 44, lineHeight: 1 }}>{realEmo.icon}</span>
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#1A0E00' }}>{realEmo.label}</p>
-          <p style={{ fontSize: '20px', fontWeight: 700, color: '#1A0E00' }}>{weather.temp}°C</p>
-          <div style={{ display: 'flex', gap: '6px', fontSize: '11px', color: '#78716C' }}>
-            <span>💧 {weather.humidity}%</span>
-            <span>💨 {weather.wind}km/h</span>
-          </div>
-        </div>
-        {/* 구분선 */}
-        <div style={{ width: 1, background: '#F0EAE2', alignSelf: 'stretch', margin: '0 8px' }} />
-        {/* 감정 날씨 */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-          <p style={{ fontSize: '11px', color: '#78716C', marginBottom: '4px' }}>감정 날씨</p>
-          {emo ? (
-            <>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: emo.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <EmoIcon size={28} color={emo.iconColor} strokeWidth={1.5} />
-              </div>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: emo.text }}>{emo.label}</p>
-              <p style={{ fontSize: '11px', color: '#78716C' }}>{dominantCount}명 참여</p>
-            </>
-          ) : (
-            <p style={{ fontSize: '11px', color: '#78716C' }}>기록 없음</p>
-          )}
-        </div>
-      </div>
-      {comment && (
-        <div style={{ marginTop: '12px', padding: '10px 12px', background: '#FFF8F3', borderRadius: '8px', borderTop: '1px solid #F0EAE2', fontSize: '13px', color: '#5A4A3A', textAlign: 'center' }}>
-          {comment}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// 지역 상세 우측 패널
-function RegionPanel({ regionName, onClose, noData, weather, weatherLoading, userEntry }) {
-  const data = REGION_DATA[regionName]
-
-  // 오늘 기록 없는 지역 — '?' 빈 상태
-  if (noData) {
-    return (
-      <div
-        style={{
-          position: 'fixed', right: 0, top: 0,
-          width: '360px', height: '100vh',
-          background: '#FFFBF7',
-          boxShadow: '-4px 0 20px rgba(0,0,0,0.08)',
-          zIndex: 30, overflowY: 'auto', padding: '24px',
-          animation: 'slideInRight 0.3s ease',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1A0E00' }}>{regionName}</h2>
-          <button onClick={onClose} style={{ color: '#9A7040', padding: '4px', borderRadius: '6px', flexShrink: 0, marginTop: '2px' }}>
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* 기록이 없어도 현재 실제 날씨는 보여준다 (감정 쪽은 '기록 없음'으로 표시됨) */}
-        <WeatherCompareCard weather={weather} weatherLoading={weatherLoading} distribution={null} />
-
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px 16px 40px', gap: '14px' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#ECE7E0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <HelpCircle size={34} color="#9A8F80" strokeWidth={2.2} />
-          </div>
-          <p style={{ fontSize: '16px', fontWeight: 700, color: '#3D1A00' }}>아직 오늘 기록이 없어요</p>
-          <p style={{ fontSize: '13px', color: '#9A7040', lineHeight: 1.6 }}>
-            {regionName}의 첫 감정 마크를<br />남기는 주인공이 되어보세요 🌱
-          </p>
-        </div>
-      </div>
-    )
-  }
-  if (!data) return null
-
-  // 사용자 입력을 distribution·total에 반영
-  const distribution = userEntry
-    ? { ...data.distribution, [userEntry.emotion]: (data.distribution[userEntry.emotion] || 0) + 1 }
-    : data.distribution
-  const total = userEntry ? data.total + 1 : data.total
-
-  const allComments = [
-    ...(userEntry ? [{ emotion: userEntry.emotion, text: userEntry.comment || '', isUser: true,
-        minutesAgo: Math.floor((Date.now() - (userEntry.timestamp || Date.now())) / 60000) }] : []),
-    ...data.comments.filter(c => c.text),
-  ]
-
-  const dominant = Object.entries(distribution).sort(([, a], [, b]) => b - a)[0][0]
-  const dominantEmo = EMOTIONS[dominant]
-
-  const sectionTitle = {
-    fontSize: '15px', fontWeight: 600, color: '#1A0E00',
-    borderLeft: '3px solid #D9700E', paddingLeft: '9px',
-    margin: '24px 0 14px',
-  }
-
-  return (
-    <div
-      style={{
-        position: 'fixed', right: 0, top: 0,
-        width: '360px', height: '100vh',
-        background: '#FFFBF7',
-        boxShadow: '-4px 0 20px rgba(0,0,0,0.08)',
-        zIndex: 30, overflowY: 'auto', padding: '24px',
-        animation: 'slideInRight 0.3s ease',
-      }}
-      onClick={e => e.stopPropagation()}
-    >
-      {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1A0E00' }}>{regionName}</h2>
-        <button
-          onClick={onClose}
-          style={{ color: '#9A7040', padding: '4px', borderRadius: '6px', flexShrink: 0, marginTop: '2px' }}
-        >
-          <X size={20} />
-        </button>
-      </div>
-      <p style={{ fontSize: '13px', color: '#9A7040', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-        오늘 {total}명 참여 ·&nbsp;
-        <dominantEmo.Icon size={14} color={dominantEmo.iconColor} strokeWidth={1.5} />
-        <span style={{ color: dominantEmo.iconColor, fontWeight: 600 }}>{dominantEmo.label}</span>
-        이 대세
-      </p>
-
-      {/* 실제 날씨 vs 감정 날씨 비교 카드 */}
-      <WeatherCompareCard weather={weather} weatherLoading={weatherLoading} distribution={distribution} />
-
-      {/* 섹션 1: 감정 분포 */}
-      <h3 style={{ ...sectionTitle, marginTop: '8px' }}>감정 분포</h3>
-      <DonutChart distribution={distribution} />
-
-      {/* 섹션 2: 최근 코멘트 */}
-      <h3 style={sectionTitle}>최근 코멘트</h3>
-      {allComments.map((c, idx) => {
-        const emo = EMOTIONS[c.emotion]
-        const pin = PIN_COLORS[c.emotion]
-        return (
-          <div key={idx} style={{
-            background: c.isUser ? emo.color : '#FFFFFF',
-            border: `1px solid ${c.isUser ? emo.border : '#F0EAE2'}`,
-            borderRadius: '12px',
-            padding: '12px 14px',
-            marginBottom: '8px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '7px' }}>
-              <div style={{
-                width: 18, height: 18, borderRadius: '50%',
-                background: pin.fill,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginRight: '6px', flexShrink: 0,
-              }}>
-                <emo.Icon size={11} color={pin.icon} strokeWidth={1.5} />
-              </div>
-              <span style={{ fontSize: '12px', color: pin.icon, fontWeight: 500 }}>{emo.label}</span>
-              {c.isUser
-                ? <span style={{ fontSize: '11px', color: emo.text, marginLeft: 'auto', fontWeight: 600 }}>✨ 내 기록</span>
-                : <span style={{ fontSize: '11px', color: '#B0A89A', marginLeft: 'auto' }}>{c.minutesAgo}분 전</span>
-              }
-            </div>
-            {c.text
-              ? <p style={{ fontSize: '13px', color: '#3A3530', lineHeight: 1.5 }}>{c.text}</p>
-              : <p style={{ fontSize: '13px', color: '#9A7040', fontStyle: 'italic', lineHeight: 1.5 }}>코멘트 없이 감정만 남겼어요.</p>
-            }
-          </div>
-        )
-      })}
-    </div>
-  )
 }
 
 // 감정별 팝업
@@ -539,15 +122,12 @@ function MarkPopup({ popup, onClose }) {
   )
 }
 
-export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) {
+export default function KoreaMap({ provinceMasks, individualMarks, userMarks, selectedRegion, onSelectRegion }) {
   const [geoData, setGeoData] = useState(null)
   const [transform, setTransform] = useState({ x: -200, y: -225, scale: 1.5 })
   const [animated, setAnimated] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [popup, setPopup] = useState(null)
-  const [selectedRegion, setSelectedRegion] = useState(null)
-  const [weather, setWeather] = useState(null)
-  const [weatherLoading, setWeatherLoading] = useState(false)
   const svgRef = useRef(null)
   const lastPos = useRef(null)
   const dragMoved = useRef(false)
@@ -638,25 +218,14 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
     lastPos.current = toSVGPt(e.clientX, e.clientY)
   }
 
-  // selectedRegion 변경 시 실제 날씨 fetch — 키는 백엔드에만, 서버 프록시(/api/weather/) 사용
-  useEffect(() => {
-    if (!selectedRegion) { setWeather(null); return }
-    setWeatherLoading(true)
-    fetch(`${API_URL}/api/weather/?region=${encodeURIComponent(selectedRegion)}`)
-      .then(r => r.json())
-      .then(d => setWeather(d.available ? d : false))
-      .catch(() => setWeather(false))
-      .finally(() => setWeatherLoading(false))
-  }, [selectedRegion])
-
-  // 시·도 마커 클릭 → 줌인 4배 + 우측 패널 열기
+  // 시·도 마커 클릭 → 줌인 4배 + URL 이동(실제 데이터 드로어는 MapPage가 :region으로 연다)
   const handleProvinceClick = (mark) => {
     if (dragMoved.current) return
     const [px, py] = projection(mark.coordinates)
     setAnimated(true)
     setPopup(null)
     setTransform({ x: W / 2 - px * 4, y: H / 2 - py * 4, scale: 4 })
-    setSelectedRegion(mark.label)
+    onSelectRegion(mark.label)
   }
 
   const handleIndividualClick = (mark, e, off = { dx: 0, dy: 0 }) => {
@@ -676,23 +245,43 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
   const panelOpen = !!selectedRegion
   const individualAll = [...individualMarks, ...userMarks]
 
-  // 같은 좌표에 겹치는 마커는 작은 원형으로 흩뿌려(jitter) 둘 다 보이게 한다.
-  const coordKey = (c) => `${c[0].toFixed(3)},${c[1].toFixed(3)}`
-  const groupCounts = individualAll.reduce((acc, mk) => {
-    const k = coordKey(mk.coordinates)
-    acc[k] = (acc[k] || 0) + 1
-    return acc
-  }, {})
-  const groupSeen = {}
-  const markOffsets = individualAll.map(mk => {
-    const k = coordKey(mk.coordinates)
-    const total = groupCounts[k]
-    if (total <= 1) return { dx: 0, dy: 0 }
-    const i = groupSeen[k] || 0
-    groupSeen[k] = i + 1
-    const angle = (2 * Math.PI * i) / total
-    const radius = 16
-    return { dx: Math.cos(angle) * radius, dy: Math.sin(angle) * radius }
+  // 화면상 가까이(겹쳐) 찍힌 핀들을 군집 중심 주변에 나선형으로 촘촘히 벌린다.
+  // 원 둘레 배치는 멤버가 많으면 거대한 링이 되므로, 해바라기(피보나치) 나선으로
+  // 중심부터 채워 "적당히 뭉친 덩어리"가 되게 한다. 화면 거리는 줌에 따라 매 렌더 재계산.
+  const CLUSTER_PX = 26 // 이 픽셀 이내로 붙은 핀은 한 군집으로 본다
+  const SPIRAL_STEP = 13 // 나선 간격(화면 px) — 키우면 더 벌어짐
+  const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)) // ≈137.5°
+  const projected = individualAll.map(mk => {
+    const [px, py] = projection(mk.coordinates)
+    return { sx: px * transform.scale, sy: py * transform.scale }
+  })
+  const clusters = []          // 각 원소: 멤버 인덱스 배열
+  const clusterOf = new Array(individualAll.length)
+  projected.forEach((p, i) => {
+    let found = -1
+    for (let c = 0; c < clusters.length; c++) {
+      const rep = projected[clusters[c][0]]
+      if (Math.hypot(p.sx - rep.sx, p.sy - rep.sy) < CLUSTER_PX) { found = c; break }
+    }
+    if (found === -1) { clusters.push([i]); clusterOf[i] = clusters.length - 1 }
+    else { clusters[found].push(i); clusterOf[i] = found }
+  })
+  const markOffsets = individualAll.map((_, i) => {
+    const members = clusters[clusterOf[i]]
+    if (members.length <= 1) return { dx: 0, dy: 0 }
+    const n = members.length
+    // 군집 중심 = 멤버들 화면좌표 평균
+    const cx = members.reduce((s, m) => s + projected[m].sx, 0) / n
+    const cy = members.reduce((s, m) => s + projected[m].sy, 0) / n
+    const order = members.indexOf(i)
+    // 해바라기 나선: 반경은 √order로 천천히 커지고, 각도는 황금각으로 고르게 분산
+    const radius = SPIRAL_STEP * Math.sqrt(order)
+    const angle = order * GOLDEN_ANGLE
+    // 자기 화면좌표 → (중심 + 나선 위 목표점) 으로 가는 화면 px 이동량
+    return {
+      dx: cx + Math.cos(angle) * radius - projected[i].sx,
+      dy: cy + Math.sin(angle) * radius - projected[i].sy,
+    }
   })
 
   return (
@@ -700,7 +289,7 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
       {/* 지도 컨테이너 — 패널 열릴 때 너비 축소 */}
       <div
         className="map-container"
-        style={{ width: panelOpen ? 'calc(100vw - 360px)' : undefined, transition: 'width 0.3s ease' }}
+        style={{ width: panelOpen ? 'calc(100vw - min(400px, 100vw))' : undefined, transition: 'width 0.3s ease' }}
         onClick={() => setPopup(null)}
       >
         <svg
@@ -830,31 +419,6 @@ export default function KoreaMap({ provinceMasks, individualMarks, userMarks }) 
 
         {popup && <MarkPopup popup={popup} onClose={() => setPopup(null)} />}
       </div>
-
-      {/* 지역 상세 우측 패널 */}
-      {panelOpen && (
-        <RegionPanel
-          regionName={selectedRegion}
-          onClose={() => setSelectedRegion(null)}
-          noData={(() => {
-            const p = provinceMasks.find(p => p.label === selectedRegion)
-            return !!p && (!p.emotion || p.emotion === 'none')
-          })()}
-          weather={weather}
-          weatherLoading={weatherLoading}
-          userEntry={(() => {
-            try {
-              const raw = localStorage.getItem(entryKey())
-              if (!raw) return null
-              const e = JSON.parse(raw)
-              // 오늘(로컬/KST) 기록만 "내 기록"으로 인정 — 어제 마커가 오늘 통계에 섞이지 않게
-              const d = new Date()
-              const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-              return (e.region === selectedRegion && e.date === today) ? e : null
-            } catch { return null }
-          })()}
-        />
-      )}
     </>
   )
 }

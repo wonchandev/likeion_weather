@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, X, LogIn, LogOut } from 'lucide-react'
+import { Plus, X, LogIn, LogOut, HelpCircle } from 'lucide-react'
 import KoreaMap from '../components/KoreaMap'
 import SideMenu from '../components/SideMenu'
 import EmotionEntryModal from '../components/EmotionEntryModal'
@@ -25,6 +25,22 @@ const COMPARE_COMMENTS = {
   storm:  { sunny: '💪 폭풍 속에서도 굳건한 기분이네요!',       cloudy: '☁️ 거친 날씨에도 의연하게 버티는 중',            rainy: '🌧️ 폭풍우 같은 하루, 마음도 젖어드네요',       storm: '⛈️ 날씨도 마음도 폭풍 그 자체인 하루' },
 }
 
+const PIN_COLORS = {
+  sunny:  { fill: '#FDEBD0', icon: '#C07800' },
+  cloudy: { fill: '#F0F2F5', icon: '#6080A0' },
+  rainy:  { fill: '#E8F0FC', icon: '#2850B0' },
+  storm:  { fill: '#F0ECF8', icon: '#6040A0' },
+}
+
+const DONUT_COLORS = {
+  sunny: '#F0C080', cloudy: '#C0CAD4', rainy: '#A0B8E8', storm: '#C0A8E0',
+}
+
+const SECTION_TITLE = {
+  fontSize: '15px', fontWeight: 600, color: '#1A0E00',
+  borderLeft: '3px solid #D9700E', paddingLeft: '9px', margin: '24px 0 14px',
+}
+
 // Time ago formatter helper
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000)
@@ -43,21 +59,26 @@ function WeatherCompareCard({ weather, weatherLoading, regionStats }) {
   const emo = dominant ? EMOTIONS[dominant] : null
   const EmoIcon = emo ? emo.Icon : null
 
+  const cardBase = {
+    background: '#FFFFFF', border: '1px solid #F0EAE2',
+    borderRadius: '16px', padding: '16px', marginBottom: '16px',
+  }
+
   if (weatherLoading) {
-    return <div className="weather-compare-skeleton" />
+    return <div className="weather-compare-skeleton" style={{ marginBottom: '16px' }} />
   }
 
   if (!weather) {
     return (
-      <div className="weather-compare-error">
-        <p>날씨 정보를 불러올 수 없어요</p>
+      <div style={{ ...cardBase, textAlign: 'center' }}>
+        <p style={{ fontSize: '13px', color: '#B0A89A', marginBottom: emo ? '12px' : 0 }}>날씨 정보를 불러올 수 없어요</p>
         {emo && (
-          <div className="weather-emotion-solo">
-            <div className="emotion-icon-circle" style={{ background: emo.color }}>
-              <EmoIcon size={28} color={emo.iconColor} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: emo.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <EmoIcon size={28} color={emo.iconColor} strokeWidth={1.5} />
             </div>
-            <p style={{ fontSize: 14, fontWeight: 500, color: emo.text }}>{emo.label}</p>
-            <p className="weather-meta">{dominantCount}명 참여</p>
+            <p style={{ fontSize: '14px', fontWeight: 500, color: emo.text }}>{emo.label}</p>
+            <p style={{ fontSize: '11px', color: '#78716C' }}>{dominantCount}명 참여</p>
           </div>
         )}
       </div>
@@ -65,116 +86,96 @@ function WeatherCompareCard({ weather, weatherLoading, regionStats }) {
   }
 
   const realType = iconToWeather(weather.icon)
+  const realEmo = EMOTIONS[realType] || EMOTIONS.sunny
   const comment = dominant ? COMPARE_COMMENTS[realType]?.[dominant] : null
 
   return (
-    <div className="weather-compare-card">
-      <h4 className="weather-compare-title">실제 날씨 vs 감정 날씨</h4>
-      <div className="weather-compare-body">
-        <div className="weather-real">
-          <p className="weather-section-label">실제 날씨</p>
-          <img
-            src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
-            width="48"
-            height="48"
-            alt={weather.description}
-          />
-          <p className="weather-desc">{weather.description}</p>
-          <p className="weather-temp">{weather.temp}°C</p>
-          <div className="weather-meta-row">
+    <div style={cardBase}>
+      <p style={{ fontSize: '13px', fontWeight: 700, color: '#4A3010', marginBottom: '12px' }}>실제 날씨 vs 감정 날씨</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        {/* 실제 날씨 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+          <p style={{ fontSize: '11px', color: '#78716C', marginBottom: '4px' }}>실제 날씨</p>
+          <span style={{ fontSize: 44, lineHeight: 1 }}>{realEmo.icon}</span>
+          <p style={{ fontSize: '14px', fontWeight: 500, color: '#1A0E00' }}>{realEmo.label}</p>
+          <p style={{ fontSize: '20px', fontWeight: 700, color: '#1A0E00' }}>{weather.temp}°C</p>
+          <div style={{ display: 'flex', gap: '6px', fontSize: '11px', color: '#78716C' }}>
             <span>💧 {weather.humidity}%</span>
             <span>💨 {weather.wind}km/h</span>
           </div>
         </div>
-        <div className="weather-col-divider" />
-        <div className="weather-emotion">
-          <p className="weather-section-label">감정 날씨</p>
+        {/* 구분선 */}
+        <div style={{ width: 1, background: '#F0EAE2', alignSelf: 'stretch', margin: '0 8px' }} />
+        {/* 감정 날씨 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+          <p style={{ fontSize: '11px', color: '#78716C', marginBottom: '4px' }}>감정 날씨</p>
           {emo ? (
             <>
-              <div className="emotion-icon-circle" style={{ background: emo.color }}>
-                <EmoIcon size={28} color={emo.iconColor} />
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: emo.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <EmoIcon size={28} color={emo.iconColor} strokeWidth={1.5} />
               </div>
-              <p className="weather-desc" style={{ color: emo.text }}>{emo.label}</p>
-              <p className="weather-meta">{dominantCount}명 참여</p>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: emo.text }}>{emo.label}</p>
+              <p style={{ fontSize: '11px', color: '#78716C' }}>{dominantCount}명 참여</p>
             </>
           ) : (
-            <p className="weather-meta">기록 없음</p>
+            <p style={{ fontSize: '11px', color: '#78716C' }}>기록 없음</p>
           )}
         </div>
       </div>
       {comment && (
-        <div className="weather-compare-comment">{comment}</div>
+        <div style={{ marginTop: '12px', padding: '10px 12px', background: '#FFF8F3', borderRadius: '8px', borderTop: '1px solid #F0EAE2', fontSize: '13px', color: '#5A4A3A', textAlign: 'center' }}>
+          {comment}
+        </div>
       )}
     </div>
   )
 }
 
 function DonutChart({ stats }) {
-  const total = Object.values(stats).reduce((a, b) => a + b, 0)
-  if (total === 0) {
-    return <div className="donut-empty">기록된 감정이 없습니다.</div>
-  }
-
-  const r = 50
+  const r = 40, cx = 55, cy = 55
   const circ = 2 * Math.PI * r
-  
-  // Calculate segments
-  let accumulatedPercent = 0
-  const segments = Object.keys(EMOTIONS).map(key => {
-    const count = stats[key] || 0
-    const percent = count / total
-    const strokeLength = circ * percent
-    const strokeOffset = circ - (circ * percent) + (circ * accumulatedPercent)
-    accumulatedPercent += percent
-    
-    return {
-      key,
-      count,
-      percent: Math.round(percent * 100),
-      strokeLength,
-      strokeOffset,
-      color: EMOTIONS[key].border
-    }
-  })
+  const total = Object.values(stats).reduce((a, b) => a + b, 0)
+  if (total === 0) return <div style={{ fontSize: 13, color: '#9A7040' }}>기록된 감정이 없습니다.</div>
+
+  let acc = 0
+  const segments = Object.entries(stats)
+    .filter(([, c]) => c > 0)
+    .map(([key, count]) => {
+      const pct = count / total
+      const seg = { key, count, pct, offset: acc }
+      acc += pct
+      return seg
+    })
 
   return (
-    <div className="donut-chart-container">
-      <svg width="160" height="160" viewBox="0 0 120 120" className="donut-svg">
-        <circle cx="60" cy="60" r={r} fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
-        {segments.map((seg, idx) => seg.count > 0 && (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '4px' }}>
+      <svg width="110" height="110" viewBox="0 0 110 110" style={{ flexShrink: 0 }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0EAE2" strokeWidth="11" />
+        {segments.map(({ key, pct, offset }) => (
           <circle
-            key={idx}
-            cx="60"
-            cy="60"
-            r={r}
-            fill="transparent"
-            stroke={seg.color}
-            strokeWidth="12"
-            strokeDasharray={circ}
-            strokeDashoffset={seg.strokeOffset}
-            transform="rotate(-90 60 60)"
+            key={key}
+            cx={cx} cy={cy} r={r}
+            fill="none"
+            stroke={DONUT_COLORS[key]}
+            strokeWidth="11"
+            strokeDasharray={`${circ * pct} ${circ}`}
+            strokeDashoffset={`${-circ * offset}`}
+            transform={`rotate(-90 ${cx} ${cy})`}
             strokeLinecap="round"
-            className="donut-segment"
           />
         ))}
-        {/* Center Text */}
-        <text x="60" y="58" textAnchor="middle" className="donut-center-total" dominantBaseline="middle">
-          {total}
-        </text>
-        <text x="60" y="74" textAnchor="middle" className="donut-center-label" dominantBaseline="middle">
-          총 기록
-        </text>
+        <text x={cx} y={cy - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="#1A0E00">{total}</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fill="#9A7040" fontWeight="600">명</text>
       </svg>
-      
-      {/* Legend Grid */}
-      <div className="donut-legend">
-        {segments.map((seg) => {
-          const emo = EMOTIONS[seg.key]
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+        {Object.entries(stats).map(([key, count]) => {
+          const emo = EMOTIONS[key]
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0
           return (
-            <div key={seg.key} className="legend-item" style={{ opacity: seg.count === 0 ? 0.4 : 1 }}>
-              <span className="legend-dot" style={{ backgroundColor: emo.border }} />
-              <span className="legend-label">{emo.icon} {emo.label}</span>
-              <span className="legend-value">{seg.percent}% ({seg.count}개)</span>
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: DONUT_COLORS[key], flexShrink: 0 }} />
+              <span style={{ color: '#4A3010', fontWeight: 600, flex: 1 }}>{emo.label}</span>
+              <span style={{ color: '#9A7040' }}>{count}명 · {pct}%</span>
             </div>
           )
         })}
@@ -313,12 +314,20 @@ export default function MapPage() {
       )
     : individualMarks
 
+  // 지역 상세 헤더용 통계(참여 인원 · 대세 감정)
+  const statTotal = regionStats ? Object.values(regionStats).reduce((a, b) => a + b, 0) : 0
+  const domEntry = regionStats ? Object.entries(regionStats).reduce((a, b) => b[1] >= a[1] ? b : a, ['sunny', -1]) : null
+  const dominant = domEntry && domEntry[1] > 0 ? domEntry[0] : null
+  const dominantEmo = dominant ? EMOTIONS[dominant] : null
+
   return (
     <div className="main-page">
       <KoreaMap
         provinceMasks={provinceMasks}
         individualMarks={visibleIndividualMarks}
         userMarks={userMarks}
+        selectedRegion={region}
+        onSelectRegion={(label) => navigate(`/map/${label}`)}
       />
       <SideMenu />
 
@@ -368,60 +377,86 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Slide-over Drawer for Region Detail View */}
-      <aside className={`region-drawer ${region ? 'open' : ''}`}>
-        <div className="region-drawer-header">
-          <div>
-            <h2 className="region-drawer-title">📍 {region} 지역 상세</h2>
-            <p className="region-drawer-subtitle">실시간 사람들의 날씨 상태</p>
-          </div>
-          <button className="region-drawer-close" onClick={() => navigate('/map')}><X size={20} /></button>
-        </div>
-
-        <div className="region-drawer-body">
+      {/* Slide-over Drawer for Region Detail View — 크림톤 상세 패널(실제 데이터) */}
+      <aside className={`region-drawer ${region ? 'open' : ''}`} style={{ background: '#FFFBF7' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px', boxSizing: 'border-box' }}>
           {loadingRegion ? (
             <div className="region-loading">
               <span className="location-dot loading" /> 정보를 불러오는 중...
             </div>
           ) : (
             <>
-              {/* Real vs Emotion Weather Compare Card */}
-              <WeatherCompareCard
-                weather={weather}
-                weatherLoading={weatherLoading}
-                regionStats={regionStats}
-              />
+              {/* 헤더 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1A0E00' }}>{region}</h2>
+                <button onClick={() => navigate('/map')} style={{ color: '#9A7040', padding: '4px', borderRadius: '6px', flexShrink: 0, marginTop: '2px' }}>
+                  <X size={20} />
+                </button>
+              </div>
+              {dominantEmo ? (
+                <p style={{ fontSize: '13px', color: '#9A7040', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                  오늘 {statTotal}명 참여 ·&nbsp;
+                  <dominantEmo.Icon size={14} color={dominantEmo.iconColor} strokeWidth={1.5} />
+                  <span style={{ color: dominantEmo.iconColor, fontWeight: 600 }}>{dominantEmo.label}</span>
+                  이 대세
+                </p>
+              ) : (
+                <p style={{ fontSize: '13px', color: '#9A7040', marginBottom: '8px' }}>실시간 사람들의 날씨 상태</p>
+              )}
 
-              {/* Emotion Stats Donut Chart */}
-              <section className="drawer-section">
-                <h3 className="section-title">📊 감정 날씨 비율</h3>
-                {regionStats && <DonutChart stats={regionStats} />}
-              </section>
+              {/* 실제 날씨 vs 감정 날씨 비교 카드 */}
+              <WeatherCompareCard weather={weather} weatherLoading={weatherLoading} regionStats={regionStats} />
 
-              {/* Comments Feed list */}
-              <section className="drawer-section comments-section">
-                <h3 className="section-title">💬 익명 코멘트 피드</h3>
-                {regionFeed.length === 0 ? (
-                  <p className="no-comments">이 지역에 남겨진 기분 코멘트가 없습니다.</p>
-                ) : (
-                  <div className="comments-feed-list">
-                    {regionFeed.map((item, idx) => {
+              {statTotal === 0 ? (
+                /* 오늘 기록 없음 — 첫 감정 남기기 독려 */
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px 16px 40px', gap: '14px' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#ECE7E0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <HelpCircle size={34} color="#9A8F80" strokeWidth={2.2} />
+                  </div>
+                  <p style={{ fontSize: '16px', fontWeight: 700, color: '#3D1A00' }}>아직 오늘 기록이 없어요</p>
+                  <p style={{ fontSize: '13px', color: '#9A7040', lineHeight: 1.6 }}>
+                    {region}의 첫 감정 마크를<br />남기는 주인공이 되어보세요 🌱
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* 감정 분포 */}
+                  <h3 style={{ ...SECTION_TITLE, marginTop: '8px' }}>감정 분포</h3>
+                  {regionStats && <DonutChart stats={regionStats} />}
+
+                  {/* 최근 코멘트 */}
+                  <h3 style={SECTION_TITLE}>최근 코멘트</h3>
+                  {regionFeed.length === 0 ? (
+                    <p style={{ fontSize: '13px', color: '#9A7040', fontStyle: 'italic' }}>이 지역에 남겨진 기분 코멘트가 없습니다.</p>
+                  ) : (
+                    regionFeed.map((item, idx) => {
                       const emo = EMOTIONS[item.emotion] || EMOTIONS.sunny
+                      const pin = PIN_COLORS[item.emotion] || PIN_COLORS.sunny
+                      const isUser = myMark && myMark.serverId != null && item.id === myMark.serverId
                       return (
-                        <div key={idx} className="feed-card" style={{ borderLeftColor: emo.border }}>
-                          <div className="feed-card-header">
-                            <span className="feed-badge" style={{ backgroundColor: emo.color, color: emo.text }}>
-                              {emo.icon} {emo.label}
-                            </span>
-                            <span className="feed-time">{timeAgo(item.timestamp)}</span>
+                        <div key={idx} style={{
+                          background: isUser ? emo.color : '#FFFFFF',
+                          border: `1px solid ${isUser ? emo.border : '#F0EAE2'}`,
+                          borderRadius: '12px', padding: '12px 14px', marginBottom: '8px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '7px' }}>
+                            <div style={{ width: 18, height: 18, borderRadius: '50%', background: pin.fill, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '6px', flexShrink: 0 }}>
+                              <emo.Icon size={11} color={pin.icon} strokeWidth={1.5} />
+                            </div>
+                            <span style={{ fontSize: '12px', color: pin.icon, fontWeight: 500 }}>{emo.label}</span>
+                            {isUser
+                              ? <span style={{ fontSize: '11px', color: emo.text, marginLeft: 'auto', fontWeight: 600 }}>✨ 내 기록</span>
+                              : <span style={{ fontSize: '11px', color: '#B0A89A', marginLeft: 'auto' }}>{timeAgo(item.timestamp)}</span>}
                           </div>
-                          <p className="feed-comment">{item.comment}</p>
+                          {item.comment
+                            ? <p style={{ fontSize: '13px', color: '#3A3530', lineHeight: 1.5 }}>{item.comment}</p>
+                            : <p style={{ fontSize: '13px', color: '#9A7040', fontStyle: 'italic', lineHeight: 1.5 }}>코멘트 없이 감정만 남겼어요.</p>}
                         </div>
                       )
-                    })}
-                  </div>
-                )}
-              </section>
+                    })
+                  )}
+                </>
+              )}
             </>
           )}
         </div>

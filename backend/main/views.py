@@ -290,8 +290,9 @@ def region_detail_api(request, region_name):
     if region_name not in prov_names:
         return JsonResponse({"error": "Region not found"}, status=404)
         
-    # Get all entries for this region
-    entries = EmotionEntry.objects.filter(region=region_name).order_by('-created_at')
+    # 오늘(KST) 기록만 — 지도 시·도 마커(province_masks)와 동일 기준으로 집계
+    today_date = datetime.now(KST).date()
+    entries = EmotionEntry.objects.filter(region=region_name, created_at__date=today_date).order_by('-created_at')
     
     # Calculate counts (distribution stats)
     counts = {
