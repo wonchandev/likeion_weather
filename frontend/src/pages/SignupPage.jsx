@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { validatePassword, validatePasswordMatch } from '../utils/validation'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const USERNAME_REGEX = /^[a-zA-Z0-9가-힣_]{2,20}$/
@@ -51,8 +52,8 @@ export default function SignupPage() {
     else if (!USERNAME_REGEX.test(username)) errs.username = '2~20자, 한글/영문/숫자/_ 만 사용 가능해요'
     else if (checkState !== 'available') errs.username = '아이디 중복 확인을 해주세요'
     if (!password) errs.password = '필수 항목이에요'
-    else if (password.length < 8) errs.password = '비밀번호는 8자 이상이어야 해요'
-    if (password !== passwordConfirm) errs.passwordConfirm = '비밀번호가 일치하지 않아요'
+    else if (!validatePassword(password)) errs.password = '비밀번호는 8자 이상이어야 해요'
+    if (password && !validatePasswordMatch(password, passwordConfirm)) errs.passwordConfirm = '비밀번호가 일치하지 않아요'
     if (!agreeTerms) errs.agree = '이용약관에 동의해주세요'
     setFieldErrors(errs)
     return Object.keys(errs).length === 0

@@ -5,6 +5,7 @@ import EmotionCard from './EmotionCard'
 import { authFetch, entryKey, getSessionId } from '../utils/api'
 import { useAuth } from '../context/AuthContext'
 import { EMOTIONS, PROVINCE_MARKS } from '../data/mockData'
+import { validateEmotion } from '../utils/validation'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const EMOTION_LIST = Object.values(EMOTIONS)
@@ -102,7 +103,7 @@ export default function EmotionEntryModal({ onClose, onSubmitted }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!selected || submitting) return
+    if (!validateEmotion(selected) || submitting) return
     setSubmitting(true)
 
     let finalLat = coords?.lat
